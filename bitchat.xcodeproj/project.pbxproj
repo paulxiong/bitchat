@@ -1041,7 +1041,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 3Q2BWA2YKJ;
 				INFOPLIST_FILE = bitchatShareExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = bitchatBoostx;
+				INFOPLIST_KEY_CFBundleDisplayName = "BitChat-photo";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1068,7 +1068,7 @@
 				DEVELOPMENT_TEAM = 3Q2BWA2YKJ;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = bitchat/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = boostx;
+				INFOPLIST_KEY_CFBundleDisplayName = "BitChat-photo";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1076,7 +1076,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = chat.bitchat.boostx;
-				PRODUCT_NAME = bitchat;
+				PRODUCT_NAME = "BitChat-photo";
 				SDKROOT = iphoneos;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_VERSION = 5.0;
@@ -1120,7 +1120,7 @@
 				DEVELOPMENT_TEAM = 3Q2BWA2YKJ;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = bitchat/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = boostx;
+				INFOPLIST_KEY_CFBundleDisplayName = "BitChat-photo";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1128,7 +1128,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = chat.bitchat.boostx;
-				PRODUCT_NAME = bitchat;
+				PRODUCT_NAME = "BitChat-photo";
 				SDKROOT = iphoneos;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_VERSION = 5.0;
@@ -1155,7 +1155,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = chat.bitchat;
-				PRODUCT_NAME = bitchat;
+				PRODUCT_NAME = "BitChat-photo";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
 			};
@@ -1238,7 +1238,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = chat.bitchat;
-				PRODUCT_NAME = bitchat;
+				PRODUCT_NAME = "BitChat-photo";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
 			};
@@ -1319,7 +1319,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 3Q2BWA2YKJ;
 				INFOPLIST_FILE = bitchatShareExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = bitchatBoostx;
+				INFOPLIST_KEY_CFBundleDisplayName = "BitChat-photo";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
