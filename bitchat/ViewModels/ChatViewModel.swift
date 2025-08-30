@@ -6002,5 +6002,93 @@ private func checkForMentions(_ message: BitchatMessage) {
         }
         #endif
     }
+    
+    // MARK: - Photo Transfer Delegate Methods
+    
+    func didReceivePhotoTransferStart(_ metadata: PhotoMetadata, from peerID: String) -> Bool {
+        // Always accept photo transfers for now
+        print("📸 [PHOTO] Received photo transfer start: \(metadata.fileName) (\(metadata.compressedSize) bytes) from \(peerID)")
+        return true
+    }
+    
+    func didReceivePhotoChunk(_ chunk: PhotoChunk, from peerID: String) {
+        // PhotoTransferService handles this internally
+        print("📸 [PHOTO] Received photo chunk \(chunk.chunkIndex) from \(peerID)")
+    }
+    
+    @MainActor func didReceivePhotoTransferComplete(_ fileID: String, from peerID: String) {
+        print("✅ [PHOTO] Photo transfer complete: \(fileID) from \(peerID)")
+        
+        // Get the photo URL for the completed transfer
+        let photoURL = getPhotoStoragePath(for: fileID, fileName: "photo_\(fileID).jpg")
+        print("📸 [PHOTO] Photo storage path: \(photoURL?.path ?? "nil")")
+        
+        // Check if we already have a photo message for this fileID
+        let existingMessage = messages.first { message in
+            message.isPhotoMessage && message.photoURL?.contains(fileID) == true
+        }
+        
+        if existingMessage != nil {
+            print("📸 [PHOTO] Photo message already exists for fileID: \(fileID)")
+            return
+        }
+        
+        // Only create message if we have a valid photo URL
+        guard let photoURL = photoURL else {
+            print("❌ [PHOTO] No valid photo URL for fileID: \(fileID), skipping message creation")
+            return
+        }
+        
+        let fileExists = FileManager.default.fileExists(atPath: photoURL.path)
+        print("📸 [PHOTO] Photo file exists: \(fileExists)")
+        
+        // Add a photo message to the chat
+        let photoMessage = BitchatMessage(
+            sender: unifiedPeerService.getPeer(by: peerID)?.displayName ?? peerID,
+            content: "📸 Photo",
+            timestamp: Date(),
+            isRelay: false,
+            isPrivate: false,
+            photoURL: photoURL.lastPathComponent // Store just the filename, not full path
+        )
+        
+        print("📸 [PHOTO] Created photo message with photoURL: \(photoMessage.photoURL ?? "nil")")
+        
+        DispatchQueue.main.async {
+            self.messages.append(photoMessage)
+            print("📸 [PHOTO] Added photo message to chat. Total messages: \(self.messages.count)")
+            
+            // Debug: print all photo messages
+            for (index, msg) in self.messages.enumerated() {
+                if msg.isPhotoMessage {
+                    print("📸 [PHOTO] Message \(index): ID=\(msg.id), isPhotoMessage=\(msg.isPhotoMessage), photoURL=\(msg.photoURL ?? "nil"), content=\(msg.content)")
+                }
+            }
+        }
+    }
+    
+    func didReceivePhotoTransferCancel(_ fileID: String, from peerID: String) {
+        print("❌ [PHOTO] Photo transfer cancelled: \(fileID) from \(peerID)")
+    }
+    
+    func didReceivePhotoTransferError(_ fileID: String, error: String, from peerID: String) {
+        print("❌ [PHOTO] Photo transfer error: \(fileID) from \(peerID) - \(error)")
+    }
+    
+    func getPhotoStoragePath(for fileID: String, fileName: String) -> URL? {
+        // Store photos in Documents directory
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let photosDirectory = documentsPath.appendingPathComponent("Photos", isDirectory: true)
+        
+        // Create directory if it doesn't exist
+        do {
+            try FileManager.default.createDirectory(at: photosDirectory, withIntermediateDirectories: true)
+        } catch {
+            print("❌ [PHOTO] Failed to create photos directory: \(error)")
+            return nil
+        }
+        
+        return photosDirectory.appendingPathComponent(fileName)
+    }
 }
 // End of ChatViewModel class

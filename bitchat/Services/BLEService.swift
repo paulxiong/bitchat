@@ -446,6 +446,10 @@ final class BLEService: NSObject {
             )
         }
         
+        // Initialize PhotoTransferService
+        PhotoTransferService.shared.bluetoothService = self
+        PhotoTransferService.shared.delegate = delegate
+        
         // Send initial announce after services are ready
         // Use longer delay to avoid conflicts with other announces
         messageQueue.asyncAfter(deadline: .now() + TransportConfig.bleInitialAnnounceDelaySeconds) { [weak self] in
@@ -936,7 +940,7 @@ final class BLEService: NSObject {
     
     // MARK: - Packet Broadcasting
     
-    private func broadcastPacket(_ packet: BitchatPacket) {
+    func broadcastPacket(_ packet: BitchatPacket) {
         // Encode once using a small per-type padding policy, then delegate by type
         let padForBLE = padPolicy(for: packet.type)
         guard let data = packet.toBinaryData(padding: padForBLE) else {
@@ -1376,6 +1380,22 @@ final class BLEService: NSObject {
         case .leave:
             handleLeave(packet, from: senderID)
             
+        // Photo Transfer Protocol
+        case .photoTransferStart:
+            handlePhotoTransferStart(packet, from: senderID)
+            
+        case .photoTransferData:
+            handlePhotoTransferData(packet, from: senderID)
+            
+        case .photoTransferComplete:
+            handlePhotoTransferComplete(packet, from: senderID)
+            
+        case .photoTransferCancel:
+            handlePhotoTransferCancel(packet, from: senderID)
+            
+        case .photoTransferRetry:
+            handlePhotoTransferRetry(packet, from: senderID)
+            
         default:
             SecureLogger.log("⚠️ Unknown message type: \(packet.type)", category: SecureLogger.session, level: .warning)
             break
@@ -1773,6 +1793,58 @@ final class BLEService: NSObject {
             self.delegate?.didDisconnectFromPeer(peerID)
             self.delegate?.didUpdatePeerList(currentPeerIDs)
         }
+    }
+    
+    // MARK: - Photo Transfer Handlers
+    
+    private func handlePhotoTransferStart(_ packet: BitchatPacket, from peerID: String) {
+        guard let metadata = try? JSONDecoder().decode(PhotoMetadata.self, from: packet.payload) else {
+            SecureLogger.log("❌ Failed to decode photo transfer start packet from \(peerID)", category: SecureLogger.session, level: .error)
+            return
+        }
+        
+        // Forward to PhotoTransferService
+        PhotoTransferService.shared.handlePhotoTransferStart(metadata, from: peerID)
+    }
+    
+    private func handlePhotoTransferData(_ packet: BitchatPacket, from peerID: String) {
+        guard let chunk = try? JSONDecoder().decode(PhotoChunk.self, from: packet.payload) else {
+            SecureLogger.log("❌ Failed to decode photo transfer data packet from \(peerID)", category: SecureLogger.session, level: .error)
+            return
+        }
+        
+        // Forward to PhotoTransferService
+        PhotoTransferService.shared.handlePhotoChunk(chunk, from: peerID)
+    }
+    
+    private func handlePhotoTransferComplete(_ packet: BitchatPacket, from peerID: String) {
+        guard let complete = try? JSONDecoder().decode(PhotoTransferComplete.self, from: packet.payload) else {
+            SecureLogger.log("❌ Failed to decode photo transfer complete packet from \(peerID)", category: SecureLogger.session, level: .error)
+            return
+        }
+        
+        // Forward to PhotoTransferService
+        PhotoTransferService.shared.handlePhotoTransferComplete(complete.fileID, from: peerID)
+    }
+    
+    private func handlePhotoTransferCancel(_ packet: BitchatPacket, from peerID: String) {
+        guard let cancel = try? JSONDecoder().decode(PhotoTransferCancel.self, from: packet.payload) else {
+            SecureLogger.log("❌ Failed to decode photo transfer cancel packet from \(peerID)", category: SecureLogger.session, level: .error)
+            return
+        }
+        
+        // Forward to PhotoTransferService
+        PhotoTransferService.shared.handlePhotoTransferCancel(cancel.fileID, from: peerID)
+    }
+    
+    private func handlePhotoTransferRetry(_ packet: BitchatPacket, from peerID: String) {
+        guard let retryRequest = try? JSONDecoder().decode(PhotoRetryRequest.self, from: packet.payload) else {
+            SecureLogger.log("❌ Failed to decode photo transfer retry packet from \(peerID)", category: SecureLogger.session, level: .error)
+            return
+        }
+        
+        // Forward to PhotoTransferService
+        PhotoTransferService.shared.handlePhotoTransferRetry(retryRequest, from: peerID)
     }
     
     // MARK: - Helper Functions

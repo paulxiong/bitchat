@@ -48,6 +48,7 @@ struct ContentView: View {
     @State private var autocompleteDebounceTimer: Timer?
     @State private var showLocationChannelsSheet = false
     @State private var showVerifySheet = false
+    @State private var showPhotoTransferView = false
     @State private var expandedMessageIDs: Set<String> = []
     // Window sizes for rendering (infinite scroll up)
     @State private var windowCountPublic: Int = 300
@@ -328,6 +329,12 @@ struct ContentView: View {
                                         .padding(.top, 4)
                                     }
 
+                                    // Photo message display
+                                    if message.isPhotoMessage, let photoURL = message.photoURL {
+                                        PhotoMessageView(photoURL: photoURL, colorScheme: colorScheme)
+                                            .padding(.top, 6)
+                                    }
+                                    
                                     // Render payment chips (Lightning / Cashu) with rounded background
                                     if !lightningLinks.isEmpty || !cashuTokens.isEmpty {
                                         HStack(spacing: 8) {
@@ -1132,6 +1139,14 @@ struct ContentView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Toggle bookmark for #\(ch.geohash)")
                 }
+                // Photo transfer button
+                Button(action: { showPhotoTransferView = true }) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 12))
+                        .foregroundColor(textColor)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Photo transfer")
                 // Location channels button '#'
                 Button(action: { showLocationChannelsSheet = true }) {
                     let badgeText: String = {
@@ -1188,6 +1203,9 @@ struct ContentView: View {
             LocationChannelsSheet(isPresented: $showLocationChannelsSheet)
                 .onAppear { viewModel.isLocationChannelsSheetPresented = true }
                 .onDisappear { viewModel.isLocationChannelsSheetPresented = false }
+        }
+        .sheet(isPresented: $showPhotoTransferView) {
+            PhotoTransferView()
         }
         .alert("heads up", isPresented: $viewModel.showScreenshotPrivacyWarning) {
             Button("ok", role: .cancel) {}

@@ -117,9 +117,8 @@ struct MessagePadding {
 
 // MARK: - Message Types
 
-/// Simplified BitChat protocol message types.
-/// Reduced from 24 types to just 6 essential ones.
-/// All private communication metadata (receipts, status) is embedded in noiseEncrypted payloads.
+/// BitChat protocol message types.
+/// Includes essential messaging and photo transfer functionality.
 enum MessageType: UInt8 {
     // Public messages (unencrypted)
     case announce = 0x01        // "I'm here" with nickname
@@ -133,6 +132,17 @@ enum MessageType: UInt8 {
     // Fragmentation (simplified)
     case fragment = 0x20        // Single fragment type for large messages
     
+    // Photo Transfer Protocol (0x18-0x1F)
+    case photoTransferStart = 0x18    // Photo transfer start
+    case photoTransferData = 0x19     // Photo data chunks
+    case photoTransferAck = 0x1A      // Photo chunk acknowledgment
+    case photoTransferResume = 0x1B   // Photo transfer resume request
+    case photoTransferComplete = 0x1C // Photo transfer complete
+    case photoTransferCancel = 0x1D   // Photo transfer cancel
+    case photoTransferProgress = 0x1E // Photo transfer progress
+    case photoTransferError = 0x1F    // Photo transfer error
+    case photoTransferRetry = 0x21    // Photo transfer retry request
+    
     var description: String {
         switch self {
         case .announce: return "announce"
@@ -141,6 +151,15 @@ enum MessageType: UInt8 {
         case .noiseHandshake: return "noiseHandshake"
         case .noiseEncrypted: return "noiseEncrypted"
         case .fragment: return "fragment"
+        case .photoTransferStart: return "photoTransferStart"
+        case .photoTransferData: return "photoTransferData"
+        case .photoTransferAck: return "photoTransferAck"
+        case .photoTransferResume: return "photoTransferResume"
+        case .photoTransferComplete: return "photoTransferComplete"
+        case .photoTransferCancel: return "photoTransferCancel"
+        case .photoTransferProgress: return "photoTransferProgress"
+        case .photoTransferError: return "photoTransferError"
+        case .photoTransferRetry: return "photoTransferRetry"
         }
     }
 }
@@ -410,6 +429,9 @@ class BitchatMessage: Codable {
     let mentions: [String]?  // Array of mentioned nicknames
     var deliveryStatus: DeliveryStatus? // Delivery tracking
     
+    // Photo support
+    let photoURL: String?         // Path to saved photo file
+    
     // Cached formatted text (not included in Codable)
     private var _cachedFormattedText: [String: AttributedString] = [:]
     
@@ -424,10 +446,10 @@ class BitchatMessage: Codable {
     // Codable implementation
     enum CodingKeys: String, CodingKey {
         case id, sender, content, timestamp, isRelay, originalSender
-        case isPrivate, recipientNickname, senderPeerID, mentions, deliveryStatus
+        case isPrivate, recipientNickname, senderPeerID, mentions, deliveryStatus, photoURL
     }
     
-    init(id: String? = nil, sender: String, content: String, timestamp: Date, isRelay: Bool, originalSender: String? = nil, isPrivate: Bool = false, recipientNickname: String? = nil, senderPeerID: String? = nil, mentions: [String]? = nil, deliveryStatus: DeliveryStatus? = nil) {
+    init(id: String? = nil, sender: String, content: String, timestamp: Date, isRelay: Bool, originalSender: String? = nil, isPrivate: Bool = false, recipientNickname: String? = nil, senderPeerID: String? = nil, mentions: [String]? = nil, deliveryStatus: DeliveryStatus? = nil, photoURL: String? = nil) {
         self.id = id ?? UUID().uuidString
         self.sender = sender
         self.content = content
@@ -439,6 +461,12 @@ class BitchatMessage: Codable {
         self.senderPeerID = senderPeerID
         self.mentions = mentions
         self.deliveryStatus = deliveryStatus ?? (isPrivate ? .sending : nil)
+        self.photoURL = photoURL
+    }
+    
+    // Computed property to check if this is a photo message
+    var isPhotoMessage: Bool {
+        return photoURL != nil
     }
 }
 
@@ -455,7 +483,8 @@ extension BitchatMessage: Equatable {
                lhs.recipientNickname == rhs.recipientNickname &&
                lhs.senderPeerID == rhs.senderPeerID &&
                lhs.mentions == rhs.mentions &&
-               lhs.deliveryStatus == rhs.deliveryStatus
+               lhs.deliveryStatus == rhs.deliveryStatus &&
+               lhs.photoURL == rhs.photoURL
     }
 }
 
@@ -475,6 +504,14 @@ protocol BitchatDelegate: AnyObject {
     // Low-level events for better separation of concerns
     func didReceiveNoisePayload(from peerID: String, type: NoisePayloadType, payload: Data, timestamp: Date)
     func didReceivePublicMessage(from peerID: String, nickname: String, content: String, timestamp: Date)
+    
+    // Photo Transfer Delegate Methods
+    func didReceivePhotoTransferStart(_ metadata: PhotoMetadata, from peerID: String) -> Bool
+    func didReceivePhotoChunk(_ chunk: PhotoChunk, from peerID: String)
+    func didReceivePhotoTransferComplete(_ fileID: String, from peerID: String)
+    func didReceivePhotoTransferCancel(_ fileID: String, from peerID: String)
+    func didReceivePhotoTransferError(_ fileID: String, error: String, from peerID: String)
+    func getPhotoStoragePath(for fileID: String, fileName: String) -> URL?
 }
 
 // Provide default implementation to make it effectively optional
@@ -493,6 +530,39 @@ extension BitchatDelegate {
 
     func didReceivePublicMessage(from peerID: String, nickname: String, content: String, timestamp: Date) {
         // Default empty implementation
+    }
+    
+    // Photo Transfer Delegate Methods - Default implementations
+    func didReceivePhotoTransferStart(_ metadata: PhotoMetadata, from peerID: String) -> Bool {
+        // Default: accept all photo transfers
+        return true
+    }
+    
+    func didReceivePhotoChunk(_ chunk: PhotoChunk, from peerID: String) {
+        // Default empty implementation
+    }
+    
+    func didReceivePhotoTransferComplete(_ fileID: String, from peerID: String) {
+        // Default empty implementation
+    }
+    
+    func didReceivePhotoTransferCancel(_ fileID: String, from peerID: String) {
+        // Default empty implementation
+    }
+    
+    func didReceivePhotoTransferError(_ fileID: String, error: String, from peerID: String) {
+        // Default empty implementation
+    }
+    
+    func getPhotoStoragePath(for fileID: String, fileName: String) -> URL? {
+        // Default: store in Documents/Photos directory
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let photosDirectory = documentsPath.appendingPathComponent("Photos", isDirectory: true)
+        
+        // Create directory if it doesn't exist
+        try? FileManager.default.createDirectory(at: photosDirectory, withIntermediateDirectories: true)
+        
+        return photosDirectory.appendingPathComponent(fileName)
     }
 }
 
@@ -527,5 +597,145 @@ struct NoisePayload {
         // Create a proper Data copy (not a subsequence) for thread safety
         let payloadData = data.count > 1 ? Data(data.dropFirst()) : Data()
         return NoisePayload(type: type, data: payloadData)
+    }
+}
+
+// MARK: - Photo Transfer Structures
+
+struct PhotoMetadata: Codable, Equatable {
+    let fileID: String
+    let fileName: String
+    let fileSize: UInt64
+    let checksum: Data
+    let senderID: String
+    let totalChunks: UInt32
+    let chunkSize: UInt32
+    let originalSize: UInt64
+    let compressedSize: UInt64
+    let compressionRatio: Double
+}
+
+struct PhotoTransferSession: Codable, Equatable {
+    let metadata: PhotoMetadata
+    var receivedChunks: Set<UInt32>
+    var status: TransferStatus
+    var progress: Double
+    var lastActivity: Date
+    var lastRetryRequest: Date?
+    var errorMessage: String?
+    
+    var isComplete: Bool {
+        return receivedChunks.count == metadata.totalChunks
+    }
+    
+    var progressPercentage: Double {
+        return Double(receivedChunks.count) / Double(metadata.totalChunks)
+    }
+}
+
+struct PhotoChunk: Codable, Equatable {
+    let fileID: String
+    let chunkIndex: UInt32
+    let data: Data
+    let isLastChunk: Bool
+    
+    init(fileID: String, chunkIndex: UInt32, data: Data, isLastChunk: Bool = false) {
+        self.fileID = fileID
+        self.chunkIndex = chunkIndex
+        self.data = data
+        self.isLastChunk = isLastChunk
+    }
+}
+
+struct PhotoTransferAck: Codable, Equatable {
+    let fileID: String
+    let chunkIndex: UInt32
+    let success: Bool
+    let errorMessage: String?
+    
+    init(fileID: String, chunkIndex: UInt32, success: Bool, errorMessage: String? = nil) {
+        self.fileID = fileID
+        self.chunkIndex = chunkIndex
+        self.success = success
+        self.errorMessage = errorMessage
+    }
+}
+
+struct PhotoTransferResume: Codable, Equatable {
+    let fileID: String
+    let missingChunks: [UInt32]
+    let lastReceivedChunk: UInt32?
+    
+    init(fileID: String, missingChunks: [UInt32], lastReceivedChunk: UInt32? = nil) {
+        self.fileID = fileID
+        self.missingChunks = missingChunks
+        self.lastReceivedChunk = lastReceivedChunk
+    }
+}
+
+struct PhotoTransferComplete: Codable, Equatable {
+    let fileID: String
+    
+    init(fileID: String) {
+        self.fileID = fileID
+    }
+}
+
+struct PhotoTransferCancel: Codable, Equatable {
+    let fileID: String
+    
+    init(fileID: String) {
+        self.fileID = fileID
+    }
+}
+
+struct PhotoTransferProgress: Codable, Equatable {
+    let fileID: String
+    let progress: Double
+    let bytesTransferred: UInt64
+    let totalBytes: UInt64
+    let chunksReceived: UInt32
+    let totalChunks: UInt32
+}
+
+struct PhotoRetryRequest: Codable, Equatable {
+    let fileID: String
+    let missingChunks: [UInt32]
+    
+    init(fileID: String, missingChunks: [UInt32]) {
+        self.fileID = fileID
+        self.missingChunks = missingChunks
+    }
+}
+
+struct PhotoTransferError: Codable, Equatable {
+    let fileID: String
+    let errorMessage: String
+    
+    init(fileID: String, errorMessage: String) {
+        self.fileID = fileID
+        self.errorMessage = errorMessage
+    }
+}
+
+enum TransferStatus: String, Codable, CaseIterable {
+    case waiting = "waiting"           // Waiting to start
+    case inProgress = "in_progress"    // Transfer in progress
+    case paused = "paused"             // Transfer paused
+    case completed = "completed"       // Transfer completed successfully
+    case failed = "failed"             // Transfer failed
+    case cancelled = "cancelled"       // Transfer cancelled by user
+    case timeout = "timeout"           // Transfer timed out
+    
+    var displayText: String {
+        switch self {
+        case .waiting: return "Waiting..."
+        case .inProgress: return "Transferring..."
+        case .paused: return "Paused"
+        case .completed: return "Completed"
+        case .failed: return "Failed"
+        case .cancelled: return "Cancelled"
+        case .timeout: return "Timed out"
+        }
     }
 }
