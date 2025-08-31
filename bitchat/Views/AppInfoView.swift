@@ -18,8 +18,15 @@ struct AppInfoView: View {
     
     // MARK: - Constants
     private enum Strings {
-        static let appName = "bitchat"
+        static let appName = "BitChat-photo"
         static let tagline = "sidegroupchat"
+        
+        // App version information
+        static var appVersion: String {
+            let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+            return "v\(version) (\(build))"
+        }
         
         enum Features {
             static let title = "FEATURES"
@@ -108,6 +115,11 @@ struct AppInfoView: View {
                 Text(Strings.tagline)
                     .font(.system(size: 16, design: .monospaced))
                     .foregroundColor(secondaryTextColor)
+                
+                Text(Strings.appVersion)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundColor(secondaryTextColor)
+                    .padding(.top, 4)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical)
