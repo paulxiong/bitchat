@@ -24,8 +24,8 @@ struct AppInfoView: View {
         // App version information
         static var appVersion: String {
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
-            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-            return "v\(version) (\(build))"
+            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "2"
+            return "\(version)(\(build))"
         }
         
         enum Features {
