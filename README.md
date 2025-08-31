@@ -1,8 +1,8 @@
 <img width="256" height="256" alt="icon_128x128@2x" src="https://github.com/user-attachments/assets/90133f83-b4f6-41c6-aab9-25d0859d2a47" />
 
-## bitchat
+## BitChat-photo
 
-A decentralized peer-to-peer messaging app with dual transport architecture: local Bluetooth mesh networks for offline communication and internet-based Nostr protocol for global reach. No accounts, no phone numbers, no central servers. It's the side-groupchat.
+A decentralized peer-to-peer messaging app with photo sharing capabilities and dual transport architecture: local Bluetooth mesh networks for offline communication and internet-based Nostr protocol for global reach. No accounts, no phone numbers, no central servers. It's the side-groupchat with photo support.
 
 [bitchat.free](http://bitchat.free)
 
@@ -21,6 +21,7 @@ This project is released into the public domain. See the [LICENSE](LICENSE) file
 - **Location-Based Channels**: Geographic chat rooms using geohash coordinates over global Nostr relays
 - **Intelligent Message Routing**: Automatically chooses best transport (Bluetooth → Nostr fallback)
 - **Decentralized Mesh Network**: Automatic peer discovery and multi-hop message relay over Bluetooth LE
+- **Photo Sharing**: Send and receive photos through the secure mesh network with automatic compression and chunking
 - **Privacy First**: No accounts, no phone numbers, no persistent identifiers
 - **Private Message End-to-End Encryption**: [Noise Protocol](http://noiseprotocol.org) for mesh, NIP-17 for Nostr
 - **IRC-Style Commands**: Familiar `/slap`, `/msg`, `/who` style interface
@@ -30,7 +31,7 @@ This project is released into the public domain. See the [LICENSE](LICENSE) file
 
 ## [Technical Architecture](https://deepwiki.com/permissionlesstech/bitchat)
 
-BitChat uses a **hybrid messaging architecture** with two complementary transport layers:
+BitChat-photo uses a **hybrid messaging architecture** with two complementary transport layers that support both text and photo sharing:
 
 ### Bluetooth Mesh Network (Offline)
 
@@ -91,6 +92,40 @@ Private messages use **intelligent transport selection**:
    - Automatic delivery when connection established
 
 For detailed protocol documentation, see the [Technical Whitepaper](WHITEPAPER.md).
+
+## Photo Sharing
+
+BitChat-photo includes advanced photo sharing capabilities that work seamlessly with the existing mesh network architecture:
+
+### Photo Transfer Features
+
+- **Secure Photo Sharing**: Photos are encrypted and transmitted through the same secure mesh network as text messages
+- **Automatic Compression**: Photos are automatically compressed to optimize transfer speed and reduce bandwidth usage
+- **Chunked Transfer**: Large photos are split into manageable chunks for reliable delivery over Bluetooth LE
+- **Progress Tracking**: Real-time transfer progress with status updates for both sender and receiver
+- **Error Recovery**: Automatic retry mechanisms and error handling for failed transfers
+- **Local Storage**: Received photos are stored locally and accessible within the chat interface
+
+### How Photo Sharing Works
+
+1. **Photo Selection**: Tap the photo button in the chat interface to select from your photo library
+2. **Compression & Chunking**: The app automatically compresses the photo and splits it into transferable chunks
+3. **Mesh Network Transmission**: Photos are sent through the same secure Bluetooth mesh network as text messages
+4. **Progressive Assembly**: Receiving devices assemble photo chunks and reconstruct the complete image
+5. **Local Storage**: Completed photos are saved locally and displayed in the chat conversation
+
+### Privacy & Security
+
+- **End-to-End Encryption**: Photos are encrypted using the same Noise Protocol as text messages
+- **No Cloud Storage**: Photos are never uploaded to external servers or cloud storage
+- **Local Only**: All photo data remains on your device and is transmitted only through the secure mesh network
+- **Automatic Cleanup**: Photos can be cleared with the emergency wipe feature (triple-tap)
+
+### Supported Formats
+
+- **Image Types**: JPEG, PNG, HEIC, and other common image formats
+- **Size Limits**: Automatically optimized for mesh network constraints
+- **Quality Preservation**: Smart compression maintains good visual quality while reducing file size
 
 ## Setup
 
