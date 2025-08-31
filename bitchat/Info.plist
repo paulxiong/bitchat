@@ -35,6 +35,10 @@
 	<string>BitChat-photo uses Bluetooth to create a secure mesh network for chatting with nearby users.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>BitChat-photo uses Bluetooth to discover and connect with other BitChat-photo users nearby.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>BitChat-photo needs camera access to let you take photos and share them with other users through the secure mesh network.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>BitChat-photo uses your location to connect you with nearby users and enable geohash-based local channels for location-specific conversations.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>
